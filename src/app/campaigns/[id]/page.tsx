@@ -3,7 +3,7 @@ import { CampaignPipeline } from '@/components/campaigns/detail/CampaignPipeline
 import { CreatorList } from '@/components/campaigns/detail/CreatorList'
 import { CampaignStats } from '@/components/campaigns/detail/CampaignStats'
 
-export default function CampaignDetailPage({ params }: { params: { id: string } }) {
+export default function CampaignDetailPage() {
   return (
     <div className="space-y-6">
       {/* Campaign Header */}

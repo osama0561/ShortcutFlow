@@ -1,49 +1,91 @@
 'use client'
 
-import { Megaphone, Users, Building2, Eye, TrendingUp, TrendingDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Megaphone, Users, Building2, Eye, TrendingUp } from 'lucide-react'
 
-const stats = [
-  {
-    name: 'Active Campaigns',
-    value: '8',
-    change: '+2',
-    changeType: 'increase',
-    icon: Megaphone,
-    color: 'bg-blue-500',
-  },
-  {
-    name: 'Creator Pool',
-    value: '7,200+',
-    subtext: '2,100 available',
-    change: '+150',
-    changeType: 'increase',
-    icon: Users,
-    color: 'bg-purple-500',
-  },
-  {
-    name: 'Active Clients',
-    value: '15',
-    subtext: '3 onboarding',
-    change: '+3',
-    changeType: 'increase',
-    icon: Building2,
-    color: 'bg-green-500',
-  },
-  {
-    name: 'Total Views',
-    value: '4.2M',
-    subtext: 'This month',
-    change: '+18%',
-    changeType: 'increase',
-    icon: Eye,
-    color: 'bg-amber-500',
-  },
-]
+interface Stats {
+  activeCampaigns: number
+  totalCreators: number
+  availableCreators: number
+  totalClients: number
+  totalViews: number
+}
 
 export function StatsCards() {
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/dashboard/stats')
+        if (res.ok) {
+          const data = await res.json()
+          setStats(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
+  }
+
+  const statCards = [
+    {
+      name: 'Active Campaigns',
+      value: stats?.activeCampaigns ?? '-',
+      icon: Megaphone,
+      color: 'bg-blue-500',
+    },
+    {
+      name: 'Creator Pool',
+      value: stats ? formatNumber(stats.totalCreators) : '-',
+      subtext: stats ? `${stats.availableCreators} available` : '',
+      icon: Users,
+      color: 'bg-purple-500',
+    },
+    {
+      name: 'Active Clients',
+      value: stats?.totalClients ?? '-',
+      icon: Building2,
+      color: 'bg-green-500',
+    },
+    {
+      name: 'Total Views',
+      value: stats ? formatNumber(stats.totalViews) : '-',
+      subtext: 'All time',
+      icon: Eye,
+      color: 'bg-amber-500',
+    },
+  ]
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 animate-pulse">
+            <div className="h-10 w-10 bg-gray-200 rounded-lg" />
+            <div className="mt-4 space-y-2">
+              <div className="h-6 w-16 bg-gray-200 rounded" />
+              <div className="h-4 w-24 bg-gray-100 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
+      {statCards.map((stat) => (
         <div
           key={stat.name}
           className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
@@ -52,15 +94,9 @@ export function StatsCards() {
             <div className={`${stat.color} p-2.5 rounded-lg`}>
               <stat.icon className="h-5 w-5 text-white" />
             </div>
-            <div className={`flex items-center gap-1 text-xs font-medium ${
-              stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {stat.changeType === 'increase' ? (
-                <TrendingUp className="h-3 w-3" />
-              ) : (
-                <TrendingDown className="h-3 w-3" />
-              )}
-              {stat.change}
+            <div className="flex items-center gap-1 text-xs font-medium text-green-600">
+              <TrendingUp className="h-3 w-3" />
+              Live
             </div>
           </div>
           <div className="mt-4">

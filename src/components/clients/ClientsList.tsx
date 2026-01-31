@@ -1,96 +1,33 @@
 'use client'
 
-import { MoreHorizontal, Megaphone, Users, Eye, ChevronRight, Mail, Phone } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { MoreHorizontal, Megaphone, Users, Eye, ChevronRight, Mail, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-const clients = [
-  {
-    id: 1,
-    name: 'SG Corp',
-    logo: 'SG',
-    industry: 'Art & Supplies',
-    contact: 'Ahmed Al-Rashid',
-    email: 'ahmed@sgcorp.com',
-    phone: '+966 50 123 4567',
-    activeCampaigns: 2,
-    totalCampaigns: 8,
-    totalCreators: 450,
-    totalViews: '4.2M',
-    status: 'active',
-    joinedDate: 'Jan 2024',
-  },
-  {
-    id: 2,
-    name: 'Florina',
-    logo: 'FL',
-    industry: 'Food & Beverage',
-    contact: 'Sara Mohammed',
-    email: 'sara@florina.com',
-    phone: '+966 55 987 6543',
-    activeCampaigns: 1,
-    totalCampaigns: 5,
-    totalCreators: 200,
-    totalViews: '2.8M',
-    status: 'active',
-    joinedDate: 'Mar 2024',
-  },
-  {
-    id: 3,
-    name: 'My Beauty',
-    logo: 'MB',
-    industry: 'Beauty & Skincare',
-    contact: 'Noura Abdullah',
-    email: 'noura@mybeauty.com',
-    phone: '+966 54 567 8901',
-    activeCampaigns: 1,
-    totalCampaigns: 3,
-    totalCreators: 150,
-    totalViews: '1.6M',
-    status: 'active',
-    joinedDate: 'Jun 2024',
-  },
-  {
-    id: 4,
-    name: 'TechCo',
-    logo: 'TC',
-    industry: 'Technology',
-    contact: 'Khalid Omar',
-    email: 'khalid@techco.com',
-    phone: '+966 56 234 5678',
-    activeCampaigns: 1,
-    totalCampaigns: 1,
-    totalCreators: 45,
-    totalViews: '0',
-    status: 'onboarding',
-    joinedDate: 'Jan 2025',
-  },
-  {
-    id: 5,
-    name: 'Fashion House',
-    logo: 'FH',
-    industry: 'Fashion',
-    contact: 'Layla Saeed',
-    email: 'layla@fashionhouse.com',
-    phone: '+966 50 345 6789',
-    activeCampaigns: 1,
-    totalCampaigns: 12,
-    totalCreators: 600,
-    totalViews: '8.5M',
-    status: 'active',
-    joinedDate: 'Sep 2023',
-  },
-]
+interface Client {
+  id: string
+  name: string
+  industry: string | null
+  contact_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  status: string
+  created_at: string
+  total_budget: number
+}
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  onboarding: 'bg-blue-100 text-blue-700',
-  inactive: 'bg-gray-100 text-gray-700',
+  ACTIVE: 'bg-green-100 text-green-700',
+  ONBOARDING: 'bg-blue-100 text-blue-700',
+  INACTIVE: 'bg-gray-100 text-gray-700',
+  CHURNED: 'bg-red-100 text-red-700',
 }
 
 const statusLabels: Record<string, string> = {
-  active: 'Active',
-  onboarding: 'Onboarding',
-  inactive: 'Inactive',
+  ACTIVE: 'Active',
+  ONBOARDING: 'Onboarding',
+  INACTIVE: 'Inactive',
+  CHURNED: 'Churned',
 }
 
 const logoColors = [
@@ -101,7 +38,64 @@ const logoColors = [
   'from-amber-400 to-amber-600',
 ]
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+function formatBudget(amount: number): string {
+  if (amount >= 1000000) return `SAR ${(amount / 1000000).toFixed(1)}M`
+  if (amount >= 1000) return `SAR ${(amount / 1000).toFixed(0)}K`
+  return `SAR ${amount}`
+}
+
 export function ClientsList() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        const res = await fetch('/api/clients')
+        if (res.ok) {
+          const data = await res.json()
+          setClients(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch clients:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchClients()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+      </div>
+    )
+  }
+
+  if (clients.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+        <p className="text-gray-500 mb-4">No clients yet</p>
+        <p className="text-sm text-gray-400">Add your first client to get started</p>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <div className="overflow-x-auto">
@@ -118,10 +112,7 @@ export function ClientsList() {
                 Status
               </th>
               <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-4">
-                Campaigns
-              </th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-4">
-                Performance
+                Budget
               </th>
               <th className="px-5 py-4"></th>
             </tr>
@@ -132,52 +123,36 @@ export function ClientsList() {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-12 h-12 bg-gradient-to-br ${logoColors[index % logoColors.length]} rounded-xl flex items-center justify-center text-white font-bold`}>
-                      {client.logo}
+                      {getInitials(client.name)}
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{client.name}</p>
-                      <p className="text-sm text-gray-500">{client.industry}</p>
+                      <p className="text-sm text-gray-500">{client.industry || 'No Industry'}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-5 py-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{client.contact}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {client.email}
-                      </span>
-                    </div>
+                    <p className="text-sm font-medium text-gray-900">{client.contact_name || 'No Contact'}</p>
+                    {client.contact_email && (
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {client.contact_email}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-5 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[client.status]}`}>
-                    {statusLabels[client.status]}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[client.status] || 'bg-gray-100 text-gray-700'}`}>
+                    {statusLabels[client.status] || client.status}
                   </span>
-                  <p className="text-xs text-gray-400 mt-1">Since {client.joinedDate}</p>
+                  <p className="text-xs text-gray-400 mt-1">Since {formatDate(client.created_at)}</p>
                 </td>
                 <td className="px-5 py-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Megaphone className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-900">
-                        <span className="font-medium">{client.activeCampaigns}</span>
-                        <span className="text-gray-400">/{client.totalCampaigns}</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-900">{client.totalCreators}</span>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-1.5">
-                    <Eye className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-900">{client.totalViews}</span>
-                    <span className="text-xs text-gray-400">total views</span>
-                  </div>
+                  <p className="text-sm font-medium text-gray-900">{formatBudget(client.total_budget)}</p>
+                  <p className="text-xs text-gray-400">Total budget</p>
                 </td>
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-2">
@@ -199,7 +174,7 @@ export function ClientsList() {
       </div>
 
       <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-        <p className="text-sm text-gray-500">Showing 5 of 15 clients</p>
+        <p className="text-sm text-gray-500">Showing {clients.length} clients</p>
         <div className="flex items-center gap-2">
           <button className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
             Previous

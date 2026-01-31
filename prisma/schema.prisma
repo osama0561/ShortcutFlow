@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// AUTH MODELS (NextAuth)
+// ============================================
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  password       String?
+  image          String?
+  role           String    @default("ACCOUNT_MANAGER") // ADMIN, ACCOUNT_MANAGER, CLIENT, CREATOR
+  emailVerified  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  accounts       Account[]
+  sessions       Session[]
+  campaigns      Campaign[]  @relation("CampaignManager")
+  notifications  Notification[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// BUSINESS MODELS
+// ============================================
+
+// Client (Brand/Company)
+model Client {
+  id            String     @id @default(cuid())
+  name          String
+  logo          String?
+  industry      String?
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  campaigns     Campaign[]
+  clientUsers   ClientUser[]
+}
+
+// Client Portal Users
+model ClientUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  clientId  String
+  createdAt DateTime @default(now())
+
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+// Creator
+model Creator {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  phone           String?
+  avatar          String?
+  handle          String?       // @username
+  niche           String?       // Beauty, Tech, Food, etc.
+  location        String?
+  followers       Int      @default(0)
+  engagement      Float    @default(0)
+  rating          Float    @default(5)
+  completedJobs   Int      @default(0)
+  status          String   @default("AVAILABLE") // AVAILABLE, ON_CAMPAIGN, BUSY, INACTIVE
+  bankName        String?
+  bankAccount     String?
+  address         String?
+  city            String?
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  campaignCreators CampaignCreator[]
+  videos           Video[]
+  payments         Payment[]
+}
+
+// Campaign
+model Campaign {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  brief         String?        // Campaign brief/instructions
+  script        String?        // Script for creators
+  status        String   @default("DRAFT") // DRAFT, RECRUITING, SCRIPTING, SHIPPING, FILMING, REVIEW, LIVE, COMPLETED
+  targetCreators Int      @default(10)
+  budget        Float?
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  managerId     String?
+  manager       User?    @relation("CampaignManager", fields: [managerId], references: [id])
+  creators      CampaignCreator[]
+  videos        Video[]
+}
+
+// Campaign-Creator Junction (Many-to-Many)
+model CampaignCreator {
+  id             String   @id @default(cuid())
+  campaignId     String
+  creatorId      String
+  joinedAt       DateTime @default(now())
+  scriptRead     Boolean  @default(false)
+  productShipped Boolean  @default(false)
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  videoUploaded  Boolean  @default(false)
+  approved       Boolean  @default(false)
+  paid           Boolean  @default(false)
+  paidAmount     Float?
+  paidAt         DateTime?
+
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator        Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, creatorId])
+}
+
+// Video
+model Video {
+  id            String   @id @default(cuid())
+  title         String?
+  url           String?
+  thumbnailUrl  String?
+  duration      Int?        // in seconds
+  status        String   @default("PENDING_UPLOAD") // PENDING_UPLOAD, UPLOADED, INTERNAL_REVIEW, REVISION_REQUESTED, CLIENT_REVIEW, APPROVED, REJECTED, POSTED
+  revisionNote  String?
+  clientNote    String?
+  tiktokUrl     String?     // Posted TikTok URL
+  views         Int      @default(0)
+  likes         Int      @default(0)
+  comments      Int      @default(0)
+  uploadedAt    DateTime?
+  approvedAt    DateTime?
+  postedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  campaignId    String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       Creator  @relation(fields: [creatorId], references: [id])
+}
+
+// Payment
+model Payment {
+  id          String   @id @default(cuid())
+  amount      Float
+  status      String   @default("pending") // pending, completed, failed
+  method      String?  // bank_transfer, paypal, etc.
+  reference   String?
+  createdAt   DateTime @default(now())
+  paidAt      DateTime?
+
+  creatorId   String
+  creator     Creator  @relation(fields: [creatorId], references: [id])
+}
+
+// Notification
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   // info, success, warning, error
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Activity Log
+model Activity {
+  id          String   @id @default(cuid())
+  action      String   // uploaded_video, approved_video, joined_campaign, etc.
+  description String
+  entityType  String?  // campaign, video, creator, etc.
+  entityId    String?
+  userId      String?
+  createdAt   DateTime @default(now())
+}

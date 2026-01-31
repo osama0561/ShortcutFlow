@@ -133,16 +133,16 @@ export function CreatorList() {
                 Status
               </th>
               <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-3">
-                <Package className="h-4 w-4 inline" title="Shipped" />
+                <span title="Shipped"><Package className="h-4 w-4 inline" /></span>
               </th>
               <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-3">
-                <FileText className="h-4 w-4 inline" title="Script Read" />
+                <span title="Script Read"><FileText className="h-4 w-4 inline" /></span>
               </th>
               <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-3">
-                <Upload className="h-4 w-4 inline" title="Video Submitted" />
+                <span title="Video Submitted"><Upload className="h-4 w-4 inline" /></span>
               </th>
               <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-3">
-                <Check className="h-4 w-4 inline" title="Approved" />
+                <span title="Approved"><Check className="h-4 w-4 inline" /></span>
               </th>
               <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-5 py-3">
                 Paid

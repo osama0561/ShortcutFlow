@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { MoreHorizontal, ChevronRight } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { MoreHorizontal, ChevronRight, Eye, Settings, Pause, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Campaign {
   id: string
@@ -28,6 +29,9 @@ const statusColors: Record<string, string> = {
 export function ActiveCampaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     async function fetchCampaigns() {
@@ -46,9 +50,42 @@ export function ActiveCampaigns() {
     fetchCampaigns()
   }, [])
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const getProgress = (current: number, total: number) => {
     if (total === 0) return 0
     return Math.round((current / total) * 100)
+  }
+
+  const handleMenuAction = (action: string, campaignId: string) => {
+    setOpenMenu(null)
+    switch (action) {
+      case 'view':
+        router.push(`/campaigns/${campaignId}`)
+        break
+      case 'settings':
+        router.push(`/campaigns/${campaignId}`)
+        break
+      case 'pause':
+        // TODO: Implement pause campaign API
+        alert('Pause campaign feature coming soon')
+        break
+      case 'delete':
+        if (confirm('Are you sure you want to delete this campaign?')) {
+          // TODO: Implement delete campaign API
+          alert('Delete campaign feature coming soon')
+        }
+        break
+    }
   }
 
   if (loading) {
@@ -147,9 +184,48 @@ export function ActiveCampaigns() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <button className="p-1 text-gray-400 hover:text-gray-600 rounded">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
+                      <div className="relative" ref={openMenu === campaign.id ? menuRef : null}>
+                        <button
+                          onClick={() => setOpenMenu(openMenu === campaign.id ? null : campaign.id)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+
+                        {openMenu === campaign.id && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                            <button
+                              onClick={() => handleMenuAction('view', campaign.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleMenuAction('settings', campaign.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Settings className="h-4 w-4" />
+                              Settings
+                            </button>
+                            <button
+                              onClick={() => handleMenuAction('pause', campaign.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Pause className="h-4 w-4" />
+                              Pause Campaign
+                            </button>
+                            <hr className="my-1 border-gray-100" />
+                            <button
+                              onClick={() => handleMenuAction('delete', campaign.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

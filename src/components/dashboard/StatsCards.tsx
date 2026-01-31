@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Megaphone, Users, Building2, Eye, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
 
 interface Stats {
   activeCampaigns: number
@@ -44,6 +45,7 @@ export function StatsCards() {
       value: stats?.activeCampaigns ?? '-',
       icon: Megaphone,
       color: 'bg-blue-500',
+      href: '/campaigns',
     },
     {
       name: 'Creator Pool',
@@ -51,12 +53,14 @@ export function StatsCards() {
       subtext: stats ? `${stats.availableCreators} available` : '',
       icon: Users,
       color: 'bg-purple-500',
+      href: '/creators',
     },
     {
       name: 'Active Clients',
       value: stats?.totalClients ?? '-',
       icon: Building2,
       color: 'bg-green-500',
+      href: '/clients',
     },
     {
       name: 'Total Views',
@@ -64,6 +68,7 @@ export function StatsCards() {
       subtext: 'All time',
       icon: Eye,
       color: 'bg-amber-500',
+      href: '/content',
     },
   ]
 
@@ -86,12 +91,13 @@ export function StatsCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {statCards.map((stat) => (
-        <div
+        <Link
           key={stat.name}
-          className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+          href={stat.href}
+          className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary-200 transition-all cursor-pointer group"
         >
           <div className="flex items-start justify-between">
-            <div className={`${stat.color} p-2.5 rounded-lg`}>
+            <div className={`${stat.color} p-2.5 rounded-lg group-hover:scale-110 transition-transform`}>
               <stat.icon className="h-5 w-5 text-white" />
             </div>
             <div className="flex items-center gap-1 text-xs font-medium text-green-600">
@@ -106,7 +112,7 @@ export function StatsCards() {
               <p className="text-xs text-gray-400 mt-1">{stat.subtext}</p>
             )}
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   )
